@@ -1,0 +1,21 @@
+[Desktop Entry]
+Name=StartWine
+Exec=startwine %F
+Comment=Launch Windows applications on Linux
+Comment[ru]=Запуск приложений Windows в операционных системах Linux
+Comment[en_GB]=Launch Windows applications on Linux operating systems
+Comment[zh_CN]=在Linux操作系统上启动Windows应用程序
+Comment[pt_PT]=Executando aplicativos do Windows em sistemas operacionais Linux
+Type=Application
+MimeType=application/x-wine-extension-msp;application/x-msi;application/x-ms-dos-executable;
+Categories=Game;
+Icon=startwine
+Actions=Remove;
+
+[Desktop Action Remove]
+Name=Remove StartWine-Launcher
+Name[ru]=Удалить StartWine-Launcher
+Name[zh_CN]=删除 StartWine-Launcher
+Name[pt_PT]=Remover StartWine-Launcher
+Icon=startwine
+Exec=startwine --uninstall %F
