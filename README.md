@@ -1,5 +1,3 @@
-cd ~/startwine-spec
-cat > README.md << 'EOF'
 # startwine-spec
 
 RPM SPEC file for [StartWine-Launcher](https://github.com/RusNor/StartWine-Launcher) — a Windows application launcher for Linux.
