@@ -1,4 +1,6 @@
 # Original project: https://github.com/RusNor/StartWine-Launcher
+%global debug_package %{nil}
+
 Name:           startwine
 Version:        422
 Release:        1%{?dist}
@@ -12,15 +14,18 @@ Source1:        ru.launcher.StartWine.desktop
 ExclusiveArch:  x86_64
 
 BuildRequires:  cargo
-BuildRequires:  rustup
+BuildRequires:  rust
 BuildRequires:  gcc
-BuildRequires:  gettext
+BuildRequires:  gettext-devel
 BuildRequires:  pkgconfig(gtk4)
-BuildRequires:  pkgconfig(gdk4)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(gio-2.0)
-BuildRequires:  pkgconfig(gobject-introspection-1.0)
 BuildRequires:  python3-devel
+BuildRequires:  make
+BuildRequires:  cmake
+BuildRequires:  libepoxy-devel
+BuildRequires:  LibRaw-devel
+BuildRequires:  openssl-devel
 
 Requires:       python3
 Requires:       gtk4
@@ -35,23 +40,50 @@ visuals, and usability.
 
 %prep
 %autosetup -n StartWine-Launcher-StartWine_v%{version}
+ln -sf data/img img
+rm -f Cargo.lock
 
 %build
-./build release
+# Отключаем встроенную сборку gettext - используем системную
+export GETTEXT_SYSTEM=1
+export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+
+# Указываем Rust использовать системную библиотеку
+export RUSTFLAGS=$(pkg-config --libs libintl | sed 's/ / -C link-arg=/g' | sed 's/^-C link-arg=//')
+
+# Собираем через cargo
+cargo build --release
+
+# Проверяем бинарник
+ls -la target/release/
+if [ ! -f target/release/sw_start ]; then
+    echo "ERROR: sw_start not found!"
+    find target/release -type f -executable 2>/dev/null || true
+    exit 1
+fi
 
 %install
-# Rust-бинарник
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_datadir}/startwine
+mkdir -p %{buildroot}%{_datadir}/pixmaps
+mkdir -p %{buildroot}%{_datadir}/applications
+
 install -Dm755 target/release/sw_start %{buildroot}%{_bindir}/startwine
 
-# Python-скрипты
-mkdir -p %{buildroot}%{_datadir}/startwine/scripts
-cp -r data/scripts/* %{buildroot}%{_datadir}/startwine/scripts/
+# Копируем остальные файлы
+if [ -d data ]; then
+    cp -r data/* %{buildroot}%{_datadir}/startwine/ 2>/dev/null || true
+fi
 
-# Иконка
-install -Dm644 data/img/gui_icons/sw_icon.png %{buildroot}%{_datadir}/pixmaps/startwine.png
+if [ -f data/img/gui_icons/sw_icon.png ]; then
+    install -Dm644 data/img/gui_icons/sw_icon.png %{buildroot}%{_datadir}/pixmaps/startwine.png
+fi
 
-# .desktop файл
 install -Dm644 %{SOURCE1} %{buildroot}%{_datadir}/applications/ru.launcher.StartWine.desktop
+
+# Делаем скрипты исполняемыми
+find %{buildroot}%{_datadir}/startwine -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
 %files
 %{_bindir}/startwine
